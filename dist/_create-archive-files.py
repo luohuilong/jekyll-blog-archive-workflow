@@ -6,7 +6,6 @@ import pathlib
 import requests
 
 archive_types = {
-    'year': 'years',
     'tag': 'tags',
     'category': 'categories'
 }
@@ -17,9 +16,9 @@ input_options = ['delete_archives', 'delete_archives_folder']
 def create_front_matter(archive_s_form, archive_p_form, archive_item_value, archive_value_escaped):
     front_matter_template = f'''---
 title: {archive_item_value}
-{archive_s_form}: "{archive_item_value}"
+type: {archive_s_form}
+{archive_s_form}: {archive_item_value}
 layout: archive-{archive_p_form}
-permalink: "{archive_s_form}/{archive_value_escaped}"
 ---
 '''
     return front_matter_template
