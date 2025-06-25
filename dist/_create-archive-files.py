@@ -78,35 +78,42 @@ if __name__ == '__main__':
             file_list = []
             archive_type = archive_types[arch_type]
             for archive_value in list(set(json_data[archive_type])):
-                value_escaped = re.sub(r'\s|\.', '-', archive_value)
-                value_escaped = re.sub(r'#', 'sharp', value_escaped)
-                value_escaped = re.sub(r'[^a-z0-9A-Z_]', '-', value_escaped)
-                value_escaped = value_escaped.lower()
+                # ====== 修改开始 ======
+                # 新的文件名处理逻辑
+                value_escaped = re.sub(r'#', 'sharp', archive_value)
+                value_escaped = re.sub(r'[\s\.]+', '-', value_escaped)
+                value_escaped = re.sub(r'[^\w\-]', '', value_escaped, flags=re.U)
+                value_escaped = re.sub(r'\-+', '-', value_escaped)
+                value_escaped = value_escaped.strip('-')
+                if not value_escaped:
+                    value_escaped = "untitled"
+                # ====== 修改结束 ======
+                
                 front_matter = create_front_matter(
                     arch_type, archive_type, archive_value, value_escaped)
                 file_name = value_escaped + '.md'
                 file_list.append(file_name)
-                file_path = archive_folder_path + '/' + archive_type + '/' + file_name
+                file_path = os.path.join(archive_folder_path, archive_type, file_name)
                 if not os.path.exists(file_path):
-                    pathlib.Path(archive_folder_path + '/' + archive_type).mkdir(parents=True, exist_ok=True)
-                    with open(file_path, 'w') as archive_md_file:
+                    pathlib.Path(os.path.join(archive_folder_path, archive_type)).mkdir(parents=True, exist_ok=True)
+                    with open(file_path, 'w', encoding='utf-8') as archive_md_file:
                         archive_md_file.writelines(front_matter)
-                    added_files.append(archive_type + ': ' + file_name)
-            all_files = os.listdir(archive_folder_path + '/' + archive_type)
-            for archive_file in all_files:
-                if archive_file not in file_list:
-                    os.remove(archive_folder_path + '/' + archive_type + '/' + archive_file)
-                    removed_files.append(archive_type + ": " + archive_file)
+                    added_files.append(f'{archive_type}: {file_name}')
+            archive_dir = os.path.join(archive_folder_path, archive_type)
+            if os.path.exists(archive_dir):
+                for archive_file in os.listdir(archive_dir):
+                    if archive_file not in file_list:
+                        os.remove(os.path.join(archive_dir, archive_file))
+                        removed_files.append(f'{archive_type}: {archive_file}')
 
-        if len(added_files) > 0:
+        if added_files:
             print('Added archive files:')
             for file_info in added_files:
                 print(file_info)
         else:
             print('No archive files to add.')
 
-
-        if len(removed_files) > 0:
+        if removed_files:
             print('Removed archive files:')
             for file_info in removed_files:
                 print(file_info)
